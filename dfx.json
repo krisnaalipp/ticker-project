@@ -1,0 +1,37 @@
+{
+  "canisters": {
+    "internet_identity": {
+      "candid": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity.did",
+      "frontend": {},
+      "remote": {
+        "id": {
+          "ic": "rdmx6-jaaaa-aaaaa-aaadq-cai"
+        }
+      },
+      "type": "custom",
+      "wasm": "https://github.com/dfinity/internet-identity/releases/latest/download/internet_identity_dev.wasm.gz"
+    },
+    "tick3t_backend": {
+      "main": "src/tick3t_backend/main.mo",
+      "type": "motoko"
+    },
+    "tick3t_frontend": {
+      "dependencies": [
+        "tick3t_backend"
+      ],
+      "source": [
+        "src/tick3t_frontend/dist"
+      ],
+      "type": "assets",
+      "workspace": "tick3t_frontend"
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  },
+  "output_env_file": ".env",
+  "version": 1
+}
