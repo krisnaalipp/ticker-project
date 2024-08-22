@@ -5,17 +5,18 @@
   "type": "module",
   "scripts": {
     "setup": "npm i && dfx canister create tick3t_backend && dfx generate tick3t_backend && dfx deploy",
-    "start": "vite --port 3000",
+    "start": "vite --port 3003",
     "prebuild": "dfx generate",
     "build": "tsc && vite build",
     "format": "prettier --write \"src/**/*.{json,js,jsx,ts,tsx,css,scss}\""
   },
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "@dfinity/agent": "^1.4.0",
+    "@dfinity/auth-client": "^1.4.0",
     "@dfinity/candid": "^1.4.0",
-    "@dfinity/principal": "^1.4.0"
+    "@dfinity/principal": "^1.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.14",
