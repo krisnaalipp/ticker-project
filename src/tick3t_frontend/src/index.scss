@@ -1,37 +1,46 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 body {
-  font-family: sans-serif;
   font-size: 1.5rem;
-}
 
-img {
-  max-width: 50vw;
-  max-height: 25vw;
-  display: block;
-  margin: auto;
-}
+  @font-face {
+    font-family: 'DMSans';
+    font-weight: 400;
+    src: url('./fonts/DMSans-Regular.ttf');
+  }
 
-form {
-  display: flex;
-  justify-content: center;
-  gap: 0.5em;
-  flex-flow: row wrap;
-  max-width: 40vw;
-  margin: auto;
-  align-items: baseline;
-}
+  @font-face {
+    font-family: 'DMSans';
+    font-weight: 500;
+    src: url('./fonts/DMSans-Medium.ttf');
+  }
 
-button[type="submit"] {
-  padding: 5px 20px;
-  margin: 10px auto;
-  float: right;
-}
+  @font-face {
+    font-family: 'DMSans';
+    font-weight: 700;
+    src: url('./fonts/DMSans-Bold.ttf');
+  }
 
-#greeting {
-  margin: 10px auto;
-  padding: 10px 60px;
-  border: 1px solid #222;
-}
+  font-family: 'DMSans' !important;
 
-#greeting:empty {
-  display: none;
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  .fade-in {
+    animation: fadeIn 1s ease-in-out;
+  }
+
+  .fade-in-section {
+    opacity: 0;
+    /* Initially hidden */
+  }
 }

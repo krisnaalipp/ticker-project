@@ -1,52 +1,23 @@
-import { useEffect, useState, FormEvent } from 'react';
-import { AuthClient } from '@dfinity/auth-client';
-import { tick3t_backend } from 'declarations/tick3t_backend';
+
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Home from './pages/HomePage';
+import About from './pages/About';
+import Navbar from './components/Navbar';
 
 function App() {
-  const [greeting, setGreeting] = useState<string>('');
-  const [authClient, setAuthClient] = useState<AuthClient | null>(null);
-
-  useEffect(() => {
-    AuthClient.create().then(setAuthClient);
-  }, []);
-
-  async function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-
-    if (!authClient) return;
-
-    await new Promise<void>((resolve, reject) => {
-      authClient.login({
-        identityProvider: `http://localhost:4943/?canisterId=${process.env.CANISTER_ID_INTERNET_IDENTITY}`,
-        onSuccess: resolve,
-        onError: reject
-      })
-    });
-
-    const principal = await authClient.getIdentity().getPrincipal();
-    setGreeting(principal.toText());
-  }
-
-  async function handleLogout(event: FormEvent) {
-    event.preventDefault();
-
-    if (!authClient) return;
-
-    await authClient.logout();
-    setGreeting('');
-  }
 
   return (
-    <main>
-      <img src="/logo2.svg" alt="DFINITY logo" />
-      <br />
-      <br />
-      <form action="#" onSubmit={handleSubmit}>
-        <button type="submit">Login!</button>
-      </form>
-      <button onClick={handleLogout}>Logout</button>
-      <section id="greeting">{greeting}</section>
-    </main>
+    <Router>
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-grow">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/about" element={<About />} />
+          </Routes>
+        </main>
+      </div>
+    </Router>
   );
 }
 
