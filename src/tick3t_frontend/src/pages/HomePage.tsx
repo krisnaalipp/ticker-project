@@ -67,9 +67,20 @@ const Home: React.FC<Props> = (props) => {
 
 		if (!authClient) return;
 
+		let urlIdentity;
+
+		switch (process.env.DFX_NETWORK) {
+			case 'local':
+				urlIdentity = `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943`
+				break;
+			default:
+				urlIdentity = `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.icp0.io`
+				break;
+		}
+
 		await new Promise<void>((resolve, reject) => {
 			authClient.login({
-				identityProvider: `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943`,
+				identityProvider: urlIdentity,
 				onSuccess: resolve,
 				onError: reject,
 			});
