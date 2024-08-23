@@ -73,8 +73,11 @@ const Home: React.FC<Props> = (props) => {
 			case 'local':
 				urlIdentity = `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943`
 				break;
+			case 'ic':
+				urlIdentity = 'https://identity.internetcomputer.org/'
+				break;
 			default:
-				urlIdentity = `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.icp0.io`
+				urlIdentity = `https://${process.env.CANISTER_ID_INTERNET_IDENTITY}.dfinity.network`
 				break;
 		}
 
