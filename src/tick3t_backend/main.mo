@@ -5,6 +5,7 @@ import Iter "mo:base/Iter";
 import Result "mo:base/Result";
 import Time "mo:base/Time";
 import Int "mo:base/Int";
+import Array "mo:base/Array";
 import UUID "mo:uuid/UUID";
 import Source "mo:uuid/async/SourceV4";
 
@@ -35,6 +36,7 @@ actor {
 
   var eventTicketStorage : HashMap.HashMap<Text, EventTicket> = HashMap.HashMap(0, Text.equal, Text.hash);
   var ticketSoldStorage : HashMap.HashMap<Text, TicketSold> = HashMap.HashMap(1, Text.equal, Text.hash);
+  var myTicketStorage : HashMap.HashMap<Principal, EventTicket> = HashMap.HashMap(2, Principal.equal, Principal.hash);
   var source = Source.Source();
 
   public query func getAllEventTickets() : async [EventTicket] {
@@ -53,6 +55,7 @@ actor {
       totalTicketSold = 0;
     };
     eventTicketStorage.put(newTicket.id, newTicket);
+    myTicketStorage.put(newTicket.owner, newTicket);
     #ok(newTicket);
   };
 
@@ -61,6 +64,24 @@ actor {
       case (?ticket) { #ok(ticket) };
       case (null) { #err("event ticket with id=" # id # " not found") };
     };
+  };
+
+  public query func getEventTicketsByOwner(owner : Text) : async [EventTicket] {
+    // Convert the short format of the owner to Principal
+    let principal = Principal.fromText(owner);
+
+    // Collect all tickets into an array
+    let allTickets = Iter.toArray(eventTicketStorage.vals());
+
+    // Filter tickets by owner
+    let ownedTickets = Array.filter<EventTicket>(
+      allTickets,
+      func(ticket : EventTicket) : Bool {
+        ticket.owner == principal;
+      },
+    );
+
+    return ownedTickets;
   };
 
   public shared (msg) func deleteEventTicket(id : Text) : async Result.Result<EventTicket, Text> {
@@ -86,18 +107,19 @@ actor {
     };
   };
 
-  public shared (msg) func buyTicket(id : Text, username : Text) : async Result.Result<TicketSold, Text> {
+  public shared (msg) func buyTicket(id : Text, username : Text, ownerTicket : Principal) : async Result.Result<TicketSold, Text> {
     let eventTicket = await getEventTicketById(id);
     switch (eventTicket) {
       case (#ok(ticket)) {
         let newTicket : TicketSold = {
           id = UUID.toText(await source.new());
-          owner = msg.caller;
+          owner = ownerTicket;
           eventTicketId = ticket.id;
           username = username;
         };
 
         ticketSoldStorage.put(newTicket.id, newTicket);
+        myTicketStorage.put(newTicket.owner, ticket);
 
         let updateEventTicket : EventTicket = {
           ticket with
@@ -113,20 +135,39 @@ actor {
   };
 
   public shared (msg) func resellTicket(id : Text, username : Text, newOwner : Principal) : async Result.Result<TicketSold, Text> {
-    let ticket = await getTicketSoldById(id);
-    switch (ticket) {
-      case (#ok(ticket)) {
-        if (Principal.toText(ticket.owner) != Principal.toText(msg.caller)) {
-          #err("Unauthorized caller");
-        } else {
-          let newTicket : TicketSold = {
-            ticket with
-            username = username;
-            owner = newOwner;
-          };
-          ticketSoldStorage.put(newTicket.id, newTicket);
+    let ticketSold = await getTicketSoldById(id);
+    let eventTicketResult = await getEventTicketById(id);
 
-          #ok(newTicket);
+    switch (ticketSold) {
+      case (#ok(ticketSold)) {
+        switch (eventTicketResult) {
+          case (#ok(ticket)) {
+            if (Principal.toText(ticketSold.owner) != Principal.toText(msg.caller)) {
+              #err("Unauthorized caller");
+            } else {
+              let newTicket : TicketSold = {
+                id = ticketSold.id;
+                owner = newOwner;
+                eventTicketId = ticketSold.eventTicketId;
+                username = username;
+              };
+
+              // Update the ticketSoldStorage
+              ticketSoldStorage.put(newTicket.id, newTicket);
+
+              // Update the myTicketStorage with new owner information
+              let updatedTicket : EventTicket = {
+                ticket with
+                owner = newOwner;
+                totalTicketSold = ticket.totalTicketSold + 1;
+                updatedAt = ?Time.now();
+              };
+              myTicketStorage.put(newOwner, updatedTicket);
+
+              #ok(newTicket);
+            };
+          };
+          case (#err(err)) { #err(err) };
         };
       };
       case (#err(err)) { #err(err) };

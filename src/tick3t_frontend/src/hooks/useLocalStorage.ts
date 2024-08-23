@@ -12,6 +12,16 @@ function useLocalStorage<T>(key: string, initialValue: T) {
         }
     });
 
+    // Function to remove the item from localStorage
+    const removeItem = () => {
+        try {
+            window.localStorage.removeItem(key);
+            setStoredValue(initialValue);
+        } catch (error) {
+            console.error(`Error removing localStorage key “${key}”:`, error);
+        }
+    };
+
     // Update localStorage when storedValue changes
     useEffect(() => {
         try {
@@ -19,7 +29,7 @@ function useLocalStorage<T>(key: string, initialValue: T) {
         } catch (error) {
             console.error(`Error setting localStorage key “${key}”:`, error);
         }
-    }, [key, storedValue]);
+    }, [key, storedValue, removeItem]);
 
     // Function to set a new value
     const setValue = (value: T | ((val: T) => T)) => {
@@ -31,16 +41,6 @@ function useLocalStorage<T>(key: string, initialValue: T) {
             });
         } catch (error) {
             console.error(`Error setting localStorage key “${key}”:`, error);
-        }
-    };
-
-    // Function to remove the item from localStorage
-    const removeItem = () => {
-        try {
-            window.localStorage.removeItem(key);
-            setStoredValue(initialValue);
-        } catch (error) {
-            console.error(`Error removing localStorage key “${key}”:`, error);
         }
     };
 

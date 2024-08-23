@@ -1,34 +1,64 @@
-import { Button, Modal, NftCard } from "@web3uikit/core";
+import { Button, Input, Loading, Modal, NftCard } from "@web3uikit/core";
 import React, { useState } from "react";
+import { natToICP } from "../helpers";
+import useLocalStorage from "../hooks/useLocalStorage";
+import { tick3t_backend } from "declarations/tick3t_backend";
+import { toast } from "react-toastify";
+import { Principal } from "@dfinity/principal";
 
-const EventCard: React.FC = () => {
+const EventCard: React.FC<any> = ({ item, greeting }) => {
     const [show, setShow] = useState(false);
-    const dummyEvent = {
-        title: "Rock Fest 2024",
-        date: "August 30, 2024",
-        venue: "Jakarta Convention Center",
-        imageUrl:
-            "https://cdn1-production-images-kly.akamaized.net/lx2RyJzu8bIJ1IsrSx0bZsGaZpk=/640x360/smart/filters:quality(75):strip_icc():format(webp)/kly-media-production/medias/711562/original/oasis-1-yos-140721.jpg",
+    const [loading, setLoading] = useState(false);
+
+    const [username, setUsername] = useState<string>('');
+
+    const handleBookClick = () => {
+        if (!greeting) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            setShow(true);
+        }
+    };
+    const [errorMessage, setErrorMessage] = useState<string>('');
+
+    const handleBuy = async () => {
+        if (!username) {
+            setErrorMessage("This field is required")
+        } else {
+            setLoading(true)
+            const result: any = await tick3t_backend.buyTicket(item.id, username, Principal.fromText(greeting));
+            if (!result.err) {
+                toast.success("Purchase Success!")
+                setShow(false)
+                setErrorMessage('');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            setLoading(false);
+        }
+    }
+
+    const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        setUsername(value);
+
+        // Reset error message when the input changes
+        if (errorMessage) {
+            setErrorMessage('');
+        }
     };
 
     return (
         <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-            <img
-                className="w-full h-48 object-cover"
-                src={dummyEvent.imageUrl}
-                alt={dummyEvent.title}
-            />
             <div className="p-4">
                 <h2 className="text-2xl text-black font-bold mb-2">
-                    {dummyEvent.title}
+                    {item.title}
                 </h2>
-                <p className="text-gray-600 mb-2">{dummyEvent.date}</p>
-                <p className="text-gray-500">{dummyEvent.venue}</p>
+                <p className="text-gray-600 mb-2">{item.description}</p>
             </div>
-            <div className="p-4 bg-gradient-to-r from-blue-800 to-black to-70% flex justify-between items-center">
-                <span className="text-lg text-white font-semibold">18 ICP</span>
+            <div className="p-4 bg-gradient-to-r from-blue-800 to-black to-70% flex gap-4 justify-between items-center">
+                <span className="text-lg text-white font-semibold">{natToICP(item.price)} ICP</span>
                 <Button
-                    onClick={() => setShow(true)}
+                    onClick={handleBookClick}
                     text="Book!"
                     theme="colored"
                     color="green"
@@ -45,33 +75,34 @@ const EventCard: React.FC = () => {
                 hasFooter={false}
             >
                 <div className="pb-8">
-                    <p className="text-black text-xl font-bold mb-5">
-                        Book now and get the NFTs limited merch ticket!
-                    </p>
                     <div className="flex gap-5 items-center justify-center">
-                        <img
-                            className="h-36 object-contain"
-                            src={dummyEvent.imageUrl}
-                            alt={dummyEvent.title}
-                        />
-                        <div className="text-start flex flex-col gap-4">
-                            <h2 className="text-sm font-bold">Event Name: {dummyEvent.title}</h2>
-                            <h2 className="text-sm font-bold">Place :{dummyEvent.venue}</h2>
-                            <h2 className="text-sm font-bold">Date :{dummyEvent.date}</h2>
+                        <div className="text-center flex flex-col gap-4">
+                            <h2 className="text-sm font-bold">Event Name: {item.title}</h2>
+                            <h2 className="text-sm font-bold">Description :{item.description}</h2>
                         </div>
                     </div>
-                    <div className="flex gap-5 justify-center items-center">
+                    <div className="flex w-100 justify-center gap-4 mt-5">
+                        <div>
+                            <Input
+                                label="Username"
+                                name="username"
+                                placeholder="Please enter your username"
+                                value={username}
+                                onChange={handleInputChange}
+                                state={errorMessage ? "error" : "initial"}
+                                errorMessage={errorMessage}
+                            />
+                        </div>
+                        {
+                            loading ? (<Loading
+                                size={12}
+                                spinnerColor="#2E7DAF"
+                                spinnerType="wave"
+                            />) : (
 
-                        <p className="text-black text-xl font-bold my-5">
-                            Limited Merch Ticket:
-                        </p>
-                        <p className="text-xl ">John Lennon Guitar Pic 1964</p>
-                    </div>
-                    <div className="flex w-100 justify-center">
-                        <img className="h-64 w-40 object-cover" src="https://faroutmagazine.co.uk/static/uploads/1/2022/10/Looking-at-the-life-of-John-Lennon-through-his-guitars.jpg" />
-                    </div>
-                    <div className="flex w-100 justify-center mt-5">
-                        <Button theme="moneyPrimary" text="Process (12 ICP)" isFullWidth />
+                                <Button theme="moneyPrimary" onClick={handleBuy} disabled={!!errorMessage} text={`Process ${natToICP(item.price)} ICP`} isFullWidth />
+                            )
+                        }
                     </div>
                 </div>
             </Modal>

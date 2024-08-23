@@ -9,9 +9,26 @@ import useIntersectionObserver from "../hooks/useIntersectionObserver";
 import useLocalStorage from "../hooks/useLocalStorage";
 import EventCard from "../components/EventList";
 
-const Home: React.FC = () => {
-	const [greeting, setValue, removeItem] = useLocalStorage<string>('greeting', '');
+interface Props {
+	setGreeting: (value: string) => void;
+	removeGreeting: () => void;
+	greeting: string;
+}
+
+interface EventTicket {
+	id: string;
+	title: string;
+	description: string;
+	price: bigint; // Keep bigint for price
+	totalTicketSold: bigint; // Keep bigint for totalTicketSold
+	createdAt: bigint; // Keep bigint for createdAt
+	updatedAt?: bigint | null; // Adjust to handle bigint or null
+}
+
+const Home: React.FC<Props> = (props) => {
+	const { setGreeting, removeGreeting, greeting } = props
 	const [authClient, setAuthClient] = useState<AuthClient | null>(null);
+	const [events, setEvents] = useState<EventTicket[]>([]); // State to hold events
 
 
 	const sectionRef1 = React.useRef<HTMLDivElement | null>(null);
@@ -23,6 +40,27 @@ const Home: React.FC = () => {
 	useEffect(() => {
 		AuthClient.create().then(setAuthClient);
 	}, []);
+
+	useEffect(() => {
+		// Fetch event tickets from backend
+		const fetchEventTickets = async () => {
+			try {
+				const fetchedEvents = await tick3t_backend.getAllEventTickets();
+				// Process fetched events to match local types
+				const processedEvents = fetchedEvents.map((event) => ({
+					...event,
+					// Handle `updatedAt` conversion if it's an array or needs special handling
+					updatedAt: event.updatedAt && event.updatedAt.length ? BigInt(event.updatedAt[0]) : null,
+				}));
+				setEvents(processedEvents);
+			} catch (error) {
+				console.error("Failed to fetch events:", error);
+			}
+		};
+
+		fetchEventTickets();
+	}, []);
+
 
 	async function handleSubmit(event: FormEvent) {
 		event.preventDefault();
@@ -37,7 +75,7 @@ const Home: React.FC = () => {
 			});
 		});
 		const principal = await authClient.getIdentity().getPrincipal();
-		setValue(principal.toText());
+		setGreeting(principal.toText());
 	}
 
 	async function handleLogout(event: FormEvent) {
@@ -46,8 +84,10 @@ const Home: React.FC = () => {
 		if (!authClient) return;
 
 		await authClient.logout();
-		removeItem();
+		removeGreeting();
 	}
+
+
 
 	return (
 		<main className="overflow-hidden">
@@ -82,9 +122,11 @@ const Home: React.FC = () => {
 				<div className="text-center text-white">
 					<h1 className="text-5xl font-bold mb-5">Upcoming Events</h1>
 					<div className="flex gap-10">
-						<EventCard />
-						<EventCard />
-						<EventCard />
+						{
+							events.map((el) => {
+								return <EventCard item={el} greeting={greeting} />
+							})
+						}
 					</div>
 				</div>
 			</section>
